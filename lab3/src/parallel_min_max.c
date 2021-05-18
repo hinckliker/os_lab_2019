@@ -17,7 +17,8 @@
 
 
 int main(int argc, char **argv) {
-  int seed = -1; // Число на основе которого генерируется массив 
+  
+  int seed = -1; 
   int array_size = -1;
   int pnum = -1;
   bool with_files = false;
@@ -77,13 +78,13 @@ int main(int argc, char **argv) {
         printf("getopt returned character code 0%o?\n", c);
     }
   }
-  //Проверка на количество введеных аргументов которые не являются опцией
+  
   if (optind < argc)
   {
     printf("Has at least one no option argument\n");
     return 1;
   }
-  // Проверка количества введенных аргументов 
+  
   if (seed == -1 || array_size == -1 || pnum == -1) 
   {
     printf("Usage: %s --seed \"num\" --array_size \"num\" --pnum \"num\" \n",
@@ -100,20 +101,12 @@ int main(int argc, char **argv) {
   gettimeofday(&start_time, NULL);
   int n = array_size / pnum; 
   int pipefd[2];
-  pipe(pipefd); // создает pipe, однонаправленный канал данных, который можно использовать для межпроцессного взаимодействия.
-  /* Данные, записанные в конец канала для записи, 
-  буферизуются ядром до тех пор, пока не будут прочитаны из 
-  конца канала для чтения  */
+  pipe(pipefd); 
   for (int i = 0; i < pnum; i++) {
-    /*Процессы создаются системным вызовом fork (так что операция создания нового процесса иногда вызывает раздваивание процесса).
-     Дочерний процесс, созданный fork - точный аналог первоначального родительского процесса, 
-     за исключением того, что он имеет собственный ID. */
-    pid_t child_pid = fork(); // Pid_t тип данных для ID процесса.
-    /*Если операция является успешной, то и родительский и дочерний процессы видят что fork возвращается,
-    но с различными значениями: она возвращает значение 0 в дочернем процессе
-    и ID порожденного процесса (ребенка) в родительском процессе.
-    Если создание процесса потерпело неудачу, fork возвращает значение -1 в родительском процессе. */
+    
+    pid_t child_pid = fork(); 
     if (child_pid >= 0) {
+      
       active_child_processes += 1;
       if (child_pid == 0) {
         // child process
@@ -121,7 +114,7 @@ int main(int argc, char **argv) {
         struct MinMax min_max;
         min_max = GetMinMax(array, (unsigned int)i * n, (unsigned int)(i + 1) * n);
         // parallel somehow
-        // Запись в файл
+        
         if (with_files)
         {
             FILE *fp;
@@ -155,7 +148,7 @@ int main(int argc, char **argv) {
 
   while (active_child_processes > 0) {
     // your code here
-    wait(NULL); // Ждем пока все доработают
+    wait(NULL);
     active_child_processes -= 1;
   }
 
@@ -168,7 +161,7 @@ int main(int argc, char **argv) {
     int max = INT_MIN;
 
     if (with_files) {
-        // из файла берем и сравниаваем
+        
       struct MinMax min_max;
       FILE *fp;
       int j;
@@ -186,7 +179,7 @@ int main(int argc, char **argv) {
       max = min_max.max;
     } else {
       struct MinMax min_max;
-      // Тупо читаем из pipe
+      
       read(pipefd[0], &min_max, sizeof(struct MinMax));
       min = min_max.min;
       max = min_max.max;

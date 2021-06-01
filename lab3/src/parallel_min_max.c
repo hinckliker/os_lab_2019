@@ -15,12 +15,20 @@
 #include "find_min_max.h"
 #include "utils.h"
 
+void die()
+{
+  
+kill(0,SIGKILL);
+
+}
+
 
 int main(int argc, char **argv) {
   
   int seed = -1; 
   int array_size = -1;
   int pnum = -1;
+  int timeout = 0;
   bool with_files = false;
   while (true) 
   {
@@ -28,6 +36,7 @@ int main(int argc, char **argv) {
     static struct option options[] = {{"seed", required_argument, 0, 0},
                                       {"array_size", required_argument, 0, 0},
                                       {"pnum", required_argument, 0, 0},
+                                      {"timeout",required_argument,0,0},
                                       {"by_files", no_argument, 0, 'f'},
                                       {0, 0, 0, 0}};
     
@@ -59,8 +68,16 @@ int main(int argc, char **argv) {
                 return 1;
             }
             break;
-          case 3:
+          case 4:
             with_files = true;
+            break;
+
+          case 3:
+            timeout = atoi(optarg);
+            if(optarg<=0)
+            {
+                return 1;
+            }
             break;
 
           defalut:
@@ -79,6 +96,8 @@ int main(int argc, char **argv) {
     }
   }
   
+  
+
   if (optind < argc)
   {
     printf("Has at least one no option argument\n");
@@ -87,9 +106,17 @@ int main(int argc, char **argv) {
   
   if (seed == -1 || array_size == -1 || pnum == -1) 
   {
-    printf("Usage: %s --seed \"num\" --array_size \"num\" --pnum \"num\" \n",
+    printf("Usage: %s --seed \"num\" --array_size \"num\" --pnum \"num\"\n",
            argv[0]);
     return 1; 
+  }
+
+  struct timeval start_time;
+  gettimeofday(&start_time, NULL);
+  if (timeout!=0)
+  {
+    signal(SIGALRM,die);
+    alarm(timeout);
   }
 
   int *array = malloc(sizeof(int) * array_size);
@@ -97,13 +124,12 @@ int main(int argc, char **argv) {
   int active_child_processes = 0;
 
 
-  struct timeval start_time;
-  gettimeofday(&start_time, NULL);
+  
   int n = array_size / pnum; 
   int pipefd[2];
   pipe(pipefd); 
   for (int i = 0; i < pnum; i++) {
-    
+    printf("s\n");
     pid_t child_pid = fork(); 
     if (child_pid >= 0) {
       
@@ -145,11 +171,24 @@ int main(int argc, char **argv) {
       return 1;
     }
   }
-
+  if(timeout==0){
   while (active_child_processes > 0) {
     // your code here
     wait(NULL);
     active_child_processes -= 1;
+  }
+  }else
+  {
+
+    while (active_child_processes > 0) 
+    {
+    // your code here
+    if(waitpid(-1,NULL,WNOHANG))
+      {
+      active_child_processes -= 1;
+      }
+    }
+    alarm(0);
   }
 
   struct MinMax min_max;

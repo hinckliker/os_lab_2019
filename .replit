@@ -1,2 +1,2 @@
 language = "bash"
-run = ""
+run = "./lab6/src/server --port 9000 --tnum 2"
